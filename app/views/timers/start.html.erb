@@ -1,2 +1,113 @@
-<h1>Timers#start</h1>
-<p>Find me in app/views/timers/start.html.erb</p>
+<div id = "time-container" class = "<%= params[:color] %>-theme">
+    <h1>Pomodoro Timer</h1>
+
+    <div id = "timer">
+    <span id = "minutes"><%= params[:session_time] %></span>:<span id = "seconds"> 00 </span>
+    </div>
+
+    <div id = "controls">
+        <button id = "start-pause"> Start </button>
+    </div>
+
+    <div id = "status"> 
+    Session Time 
+    </div>
+
+    <a href="/timers/home" class="back-link">Back to Home</a>
+</div>
+
+<%= javascript_tag do %>
+    var sessionTime = <%= params[:session_time] %>;
+    var breakTime = <%= params[:break_time] %>;
+
+    var minutes = sessionTime;
+    var seconds = 0;
+    var isRunning = false;
+    var inSession = true;
+    var timer;
+     
+    //Get elements
+    var minutesElement = document.getElementById('minutes');
+    var secondsElement = document.getElementById('seconds');
+    var statusElement = document.getElementById('status');
+    var startPauseButton = document.getElementById('start-pause');
+    var resetButton = document.getElementById('reset');
+
+
+    function zeroPadding(num) {
+        return (num < 10) ? '0' + num : num;
+    }
+
+    function updateTimer(){
+        minutesElement.textContent = zeroPadding(minutes)
+        secondsElement.textContent = zeroPadding(seconds)
+
+        statusElement.textContent = inSession ? 'Session Time' : 'Break Time'
+
+    }
+
+    //Function to start timer
+    function startTimer(){
+        //Returns if timer is already in running state
+        if(isRunning) return;
+
+        //Otherwise we set timer  to running state
+        isRunning = true;
+        //Display button to present session pause option
+        startPauseButton.textContent = 'Pause'
+
+
+        timer = setInterval(function(){
+            if (seconds == 0){
+                if (minutes == 0){
+                clearInterval(timer);
+                isRunning = false;
+
+                inSession = !inSession;
+
+                if (inSession){
+                    minutes = sessionTime;
+                }
+                else{
+                    minutes = breakTime;
+                }
+                
+                seconds = 0;
+                updateTimer();
+                startPauseButton.textContent = 'Start';
+
+                return;
+                }
+            minutes--;
+            seconds = 59;
+            }
+            else{
+                seconds--;
+            }
+            
+            updateTimer();
+        }, 1000);
+    }
+
+    //Function to pause timer
+    function pauseTimer(){
+        //Session has to be active and running to pause
+        if(!isRunning) return;
+        //Clears active interval to stop timer
+        clearInterval(timer);
+        //Sets session to not running, wait for start input
+        isRunning = false;
+        startPauseButton.textContent = "Start";
+    }
+
+    startPauseButton.addEventListener('click', function(){
+        if(isRunning) {
+            pauseTimer();
+        }
+        else {
+            startTimer();
+        }   
+    });
+
+    updateTimer();
+<% end %>
