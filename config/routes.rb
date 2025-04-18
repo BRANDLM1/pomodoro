@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   get 'timers/home'
+  get 'timers/settings'
   get 'timers/start'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   root 'timers#home'

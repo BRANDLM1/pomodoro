@@ -1,0 +1,172 @@
+<div class="settings-container">
+  <h1>Customize Your Pomodoro Experience</h1>
+  
+  <%= form_tag(timers_start_path, method: :get) do %>
+    <div class="settings-section">
+      <h2>Timer Settings</h2>
+      <div class="setting-group">
+        <div class="setting">
+          <%= label_tag :session_time, "Session Time (minutes):" %>
+          <%= number_field_tag :session_time, params[:session_time] || 25, min: 1, max: 60 %>
+        </div>
+        
+        <div class="setting">
+          <%= label_tag :break_time, "Break Time (minutes):" %>
+          <%= number_field_tag :break_time, params[:break_time] || 5, min: 1, max: 30 %>
+        </div>
+       
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <h2>Theme Settings</h2>
+      <div class="theme-selector">
+        <div class="theme-option">
+          <% {"Light" => "Light", "Peruvian Rainforest" => "Peruvian Rainforest", "SPACE" => "SPACE"}.each do |value, label| %>
+            <div class="theme-option">
+              <%= radio_button_tag :theme, value, (params[:theme] || "Light") == value %>
+              <%= label_tag "theme_#{value}", label, class: "theme-label" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <h2>Feeling</h2>
+      <p>Select your current mood to receive personalized motivational messages</p>
+      <div class="feeling-selector">
+        <% {"focused" => "I need to focus", "motivated" => "I need motivation", "calm" => "I want to remain calm"}.each do |value, label| %>
+          <div class="feeling-option">
+            <%= radio_button_tag :feeling, value, (params[:feeling] || "focused") == value %>
+            <%= label_tag "feeling_#{value}", label, class: "feeling-label" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <%= submit_tag "Start Timer", class: "start-button" %>
+      <%= link_to "Back to Home", timers_home_path, class: "back-button" %>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .settings-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .settings-section {
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .setting-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .setting {
+    margin-bottom: 15px;
+    flex: 1 1 200px;
+  }
+  
+  .setting label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .setting input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  
+  .theme-options, .music-options, .feeling-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  .theme-option, .music-option, .feeling-option {
+    margin-bottom: 10px;
+  }
+  
+  .theme-option label {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: #f1f1f1;
+    display: inline-block;
+    transition: background-color 0.2s;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  .music-option label {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: #f1f1f1;
+    display: inline-block;
+    transition: background-color 0.2s;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  
+  .feeling-label {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: #f1f1f1;
+    display: inline-block;
+    transition: background-color 0.2s;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  
+ input[type="radio"]:checked + .theme-label{
+  background-color: #4CAF50;
+  color: white;
+}
+ input[type="radio"]:checked + .music-label,
+ input[type="radio"]:checked + .feeling-label {
+  background-color: #4CAF50;
+  color: white;
+}
+  
+  .button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+  }
+  
+  .start-button, .back-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    text-align: center;
+    
+  }
+  
+  .start-button {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .back-button {
+    background-color: #f1f1f1;
+    color: #333;
+  }
+</style>

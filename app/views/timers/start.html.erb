@@ -1,113 +1,469 @@
-<div id = "time-container" class = "<%= params[:color] %>-theme">
+<div id="time-container" class="theme-container <%= @color %>-theme <%= @theme.downcase.gsub(/\s+/, '-') %>-theme">
+  <div class="timer-content">
     <h1>Pomodoro Timer</h1>
 
-    <div id = "timer">
-    <span id = "minutes"><%= params[:session_time] %></span>:<span id = "seconds"> 00 </span>
+    <div id="timer">
+      <span id="minutes"><%= params[:session_time] || 25 %></span>:<span id="seconds">00</span>
     </div>
 
-    <div id = "controls">
-        <button id = "start-pause"> Start </button>
+    <div id="status">
+      Session Time
     </div>
 
-    <div id = "status"> 
-    Session Time 
-    </div>
-
+    <button id="start-button" class="timer-button" onclick="startTimer()">Start Timer</button>
     <a href="/timers/home" class="back-link">Back to Home</a>
+  </div>
+
+  <%# If theme is space, assign space audio as background %>
+  <% if @theme.downcase.include?("space") %>
+    <!-- Space theme audio -->
+    <audio id="ambience-sound" loop preload="auto">
+      <source src="<%= asset_path('space-ambient.wav') %>" type="audio/wav">
+    </audio>
+  <%# If theme is rainforest, assign rainforest audio as background %>
+  <% elsif @theme.downcase.include?("rainforest") %>
+    <!-- Rainforest theme audio -->
+    <audio id="ambience-sound" loop preload="auto">
+      <source src="<%= asset_path('rainforest-ambient.wav') %>" type="audio/wav">
+    </audio>
+  <% end %>
+  
+  <!-- Notification sounds -->
+  <audio id="session-end-sound" preload="auto">
+    <source src="<%= asset_path('session-end.mp3') %>" type="audio/mpeg">
+  </audio>
+  <audio id="break-end-sound" preload="auto">
+    <source src="<%= asset_path('break-end.mp3') %>" type="audio/mpeg">
+  </audio>
 </div>
 
 <%= javascript_tag do %>
-    var sessionTime = <%= params[:session_time] %>;
-    var breakTime = <%= params[:break_time] %>;
+// Precompile audio paths
+window.audioPaths = {
+  "focused-1.wav": "<%= asset_path('focused-1.wav') %>",
+  "focused-2.wav": "<%= asset_path('focused-2.wav') %>",
+  "focused-3.wav": "<%= asset_path('focused-3.wav') %>",
+  "focused-4.wav": "<%= asset_path('focused-4.wav') %>",
+  "focused-5.wav": "<%= asset_path('focused-5.wav') %>",
+  "motivated-1.wav": "<%= asset_path('motivated-1.wav') %>",
+  "motivated-2.wav": "<%= asset_path('motivated-2.wav') %>",
+  "motivated-3.wav": "<%= asset_path('motivated-3.wav') %>",
+  "motivated-4.wav": "<%= asset_path('motivated-4.wav') %>",
+  "motivated-5.wav": "<%= asset_path('motivated-5.wav') %>",
+  "calm-1.wav": "<%= asset_path('calm-1.wav') %>",
+  "calm-2.wav": "<%= asset_path('calm-2.wav') %>",
+  "calm-3.wav": "<%= asset_path('calm-3.wav') %>",
+  "calm-4.wav": "<%= asset_path('calm-4.wav') %>",
+  "calm-5.wav": "<%= asset_path('calm-5.wav') %>"
+};
 
-    var minutes = sessionTime;
-    var seconds = 0;
-    var isRunning = false;
-    var inSession = true;
-    var timer;
-     
-    //Get elements
-    var minutesElement = document.getElementById('minutes');
-    var secondsElement = document.getElementById('seconds');
-    var statusElement = document.getElementById('status');
-    var startPauseButton = document.getElementById('start-pause');
-    var resetButton = document.getElementById('reset');
+// Make variables global for persistence across page loads
+window.sessionTime = <%= params[:session_time] || 25 %>;
+window.breakTime = <%= params[:break_time] || 5 %>;
+window.minutes = window.sessionTime;
+window.seconds = 0;
+window.isRunning = false;
+window.inSession = true;
+window.timer = null;
 
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM Content Loaded. Timer initialized with session time:', window.sessionTime, 'break time:', window.breakTime);
+  
+  // Audio elements
+  var ambienceSound = document.getElementById('ambience-sound');
+  var sessionEndSound = document.getElementById('session-end-sound');
+  var breakEndSound = document.getElementById('break-end-sound');
+  
+  // Set full volume
+  if (ambienceSound) ambienceSound.volume = 1.0;
+  if (sessionEndSound) sessionEndSound.volume = 1.0;
+  if (breakEndSound) breakEndSound.volume = 1.0;
+  
+  // Initialize timer display
+  updateDisplay();
+});
 
-    function zeroPadding(num) {
-        return (num < 10) ? '0' + num : num;
+// Format numbers with leading zeros (global function)
+window.zeroPadding = function(num) {
+  return (num < 10) ? '0' + num : num;
+};
+
+// Update timer display (global function)
+window.updateDisplay = function() {
+  var minutesElement = document.getElementById('minutes');
+  var secondsElement = document.getElementById('seconds');
+  var statusElement = document.getElementById('status');
+  
+  if (minutesElement && secondsElement) {
+    minutesElement.textContent = window.zeroPadding(window.minutes);
+    secondsElement.textContent = window.zeroPadding(window.seconds);
+    if (statusElement) {
+      statusElement.textContent = window.inSession ? 'Session Time' : 'Break Time';
     }
+  }
+};
 
-    function updateTimer(){
-        minutesElement.textContent = zeroPadding(minutes)
-        secondsElement.textContent = zeroPadding(seconds)
-
-        statusElement.textContent = inSession ? 'Session Time' : 'Break Time'
-
+// Play notification sound based on current state
+window.playNotificationSound = function() {
+  var sessionEndSound = document.getElementById('session-end-sound');
+  var breakEndSound = document.getElementById('break-end-sound');
+  
+  if (window.inSession) {
+    // Just switched from break to session
+    if (breakEndSound) {
+      breakEndSound.currentTime = 0;
+      try {
+        breakEndSound.play().catch(function(error) {
+          console.error('Error playing break end sound:', error);
+        });
+      } catch(e) {
+        console.error('Error playing break end sound:', e);
+      }
     }
+  } else {
+    // Just switched from session to break
+    if (sessionEndSound) {
+      sessionEndSound.currentTime = 0;
+      try {
+        sessionEndSound.play().catch(function(error) {
+          console.error('Error playing session end sound:', error);
+        });
+      } catch(e) {
+        console.error('Error playing session end sound:', e);
+      }
+    }
+  }
+};
 
-    //Function to start timer
-    function startTimer(){
-        //Returns if timer is already in running state
-        if(isRunning) return;
-
-        //Otherwise we set timer  to running state
-        isRunning = true;
-        //Display button to present session pause option
-        startPauseButton.textContent = 'Pause'
-
-
-        timer = setInterval(function(){
-            if (seconds == 0){
-                if (minutes == 0){
-                clearInterval(timer);
-                isRunning = false;
-
-                inSession = !inSession;
-
-                if (inSession){
-                    minutes = sessionTime;
-                }
-                else{
-                    minutes = breakTime;
-                }
-                
-                seconds = 0;
-                updateTimer();
-                startPauseButton.textContent = 'Start';
-
-                return;
-                }
-            minutes--;
-            seconds = 59;
+// Function for background ambience
+window.playAmbience = function() {
+  var ambienceSound = document.getElementById('ambience-sound');
+  // Reset ambient sound playback
+  if (ambienceSound) {
+    // Reset to beginning and play with high volume
+    ambienceSound.currentTime = 0;
+    ambienceSound.volume = 1.0;
+    
+    // Play with error handling
+    try {
+      var playPromise = ambienceSound.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(function(error) {
+          console.error('Error playing ambience:', error);
+          // Try timeout for buffer
+          setTimeout(function() {
+            try {
+              ambienceSound.play().catch(function(err) {
+                console.error('Second attempt failed:', err);
+              });
+            } catch(e) {
+              console.error('Error in second ambience attempt:', e);
             }
-            else{
-                seconds--;
-            }
-            
-            updateTimer();
-        }, 1000);
+          }, 1000);
+        });
+      }
+    } catch(e) {
+      console.error('Synchronous error playing ambience:', e);
     }
+  }
+};
 
-    //Function to pause timer
-    function pauseTimer(){
-        //Session has to be active and running to pause
-        if(!isRunning) return;
-        //Clears active interval to stop timer
-        clearInterval(timer);
-        //Sets session to not running, wait for start input
-        isRunning = false;
-        startPauseButton.textContent = "Start";
+//Pick pop-ups
+window.feelingMessages = {
+  "focused": [
+    { text: "Stay in the zone - you're doing great!", audio: "focused-1.wav" },
+    { text: "Focus on one task at a time.", audio: "focused-2.wav" },
+    { text: "Your concentration is your superpower.", audio: "focused-3.wav" },
+    { text: "Minimize distractions, maximize output.", audio: "focused-4.wav" },
+    { text: "Deep work leads to great accomplishments.", audio: "focused-5.wav" }
+  ],
+  "motivated": [
+    { text: "You're making progress - keep going!", audio: "motivated-1.wav" },
+    { text: "Every step counts toward your goal.", audio: "motivated-2.wav" },
+    { text: "You've got this!", audio: "motivated-3.wav" },
+    { text: "Remember why you started.", audio: "motivated-4.wav" },
+    { text: "Your determination is inspiring.", audio: "motivated-5.wav" }
+  ],
+  "calm": [
+    { text: "Breathe deep and stay centered.", audio: "calm-1.wav" },
+    { text: "Take your time, work with intention.", audio: "calm-2.wav" },
+    { text: "Steady progress is sustainable progress.", audio: "calm-3.wav" },
+    { text: "Find clarity in calm focus.", audio: "calm-4.wav" },
+    { text: "Mindful work creates better results.", audio: "calm-5.wav" }
+  ]
+};
+
+// Fixed playMessageAudio function
+window.playMessageAudio = function(audioFileName) {
+  // Get the precompiled path from our paths object
+  var audioPath = window.audioPaths[audioFileName];
+  
+  if (!audioPath) {
+    console.error("Audio file not found:", audioFileName);
+    return;
+  }
+  
+  console.log("Playing audio file:", audioFileName, "with path:", audioPath);
+  
+  // Create audio element
+  var audio = new Audio(audioPath);
+  audio.volume = 0.7; // Set volume to 70%
+  
+  // Play the audio with error handling
+  try {
+    var playPromise = audio.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(function(error) {
+        console.error("Error playing message audio:", error);
+      });
     }
+  } catch(e) {
+    console.error("Error creating audio element:", e);
+  }
+};
 
-    startPauseButton.addEventListener('click', function(){
-        if(isRunning) {
-            pauseTimer();
-        }
-        else {
-            startTimer();
-        }   
-    });
+// Start timer countdown (global function)
+window.startTimer = function() {
 
-    updateTimer();
+  window.showFeelingMessages = function() {
+  // Get the selected feeling
+  var feeling = "<%= params[:feeling] || 'focused' %>";
+  
+  // Get the messages for this feeling
+  var messages = window.feelingMessages[feeling] || window.feelingMessages["focused"];
+  
+  // Get timer element as parent for messages
+  var timerContainer = document.querySelector('.timer-content');
+  
+  // Create popup element if it doesn't exist
+  var popup = document.createElement('div');
+  popup.id = 'message-popup';
+  popup.style.display = 'none';
+  timerContainer.appendChild(popup);
+  
+  // Shuffle the messages to randomize them
+  var shuffledMessages = [...messages].sort(() => 0.5 - Math.random());
+  
+  // Calculate time between messages (in seconds)
+  var sessionLengthSeconds = window.sessionTime * 60;
+  var intervalSeconds = Math.floor(sessionLengthSeconds / 5);
+  
+  // Display messages at intervals
+  shuffledMessages.forEach(function(message, index) {
+    setTimeout(function() {
+      // Only show message if still in session mode
+      if (window.inSession) {
+        // Show message
+        popup.textContent = message.text;
+        popup.style.display = 'block';
+        
+        // Play the matching audio file
+        window.playMessageAudio(message.audio);
+        
+        // Hide after 3 seconds
+        setTimeout(function() {
+          popup.style.display = 'none';
+        }, 3000);
+      }
+    }, intervalSeconds * (index + 1) * 1000);
+  });
+};
+
+
+  console.log('Start timer function called');
+  if (window.isRunning) return;
+  
+  window.isRunning = true;
+  var startButton = document.getElementById('start-button');
+  if (startButton) startButton.style.display = 'none'; // Hide the start button
+  
+  // Start theme-specific ambience
+  window.playAmbience();
+  // Start motivational messages
+  window.showFeelingMessages();
+  
+  window.timer = setInterval(function() {
+    // Decrement seconds
+    if (window.seconds > 0) {
+      window.seconds--;
+    } 
+    // If seconds reach 0, decrement minutes
+    else if (window.minutes > 0) {
+      window.minutes--;
+      window.seconds = 59;
+    } 
+    // If both are 0, switch modes
+  else {
+    // Clear current interval
+    clearInterval(window.timer);
+    
+    // Toggle between session and breaks
+    window.inSession = !window.inSession;
+    
+    // Play notification sound
+    window.playNotificationSound();
+    
+    // Reset timer based on current mode
+    if (window.inSession) {
+      window.minutes = window.sessionTime;
+      console.log("Switching to session mode, minutes set to:", window.minutes);
+    } else {
+      window.minutes = window.breakTime;
+      console.log("Switching to break mode, minutes set to:", window.minutes);
+    }
+    window.seconds = 0;
+    
+    // Update display first
+    window.updateDisplay();
+    
+    // Reset running state and restart timer
+    window.isRunning = false;
+    setTimeout(function() {
+      window.startTimer();
+    }, 1000);
+  }
+  
+  // Update the display
+  window.updateDisplay();
+}, 1000);
+};
 <% end %>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.theme-container {
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  width: 100%;
+  height: 100vh;
+  text-align: center;
+  box-shadow: none; /* Remove shadow */
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+}
+
+.timer-content {
+  padding: 30px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Themes css */
+.light-theme {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.space-theme {
+  background-color: #000033;
+  color: white;
+  background-image: url('<%= asset_path("space-bg.jpg") %>');
+  background-size: cover;
+  background-position: center;
+}
+
+.peruvian-rainforest-theme {
+  background-color: #005500;
+  color: white;
+  background-image: url('<%= asset_path("rainforest-bg.jpg") %>');
+  background-size: cover;
+  background-position: center;
+}
+
+#timer {
+  font-size: 3rem;
+  margin: 20px 0;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+#status {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  text-shadow: 0 0 3px rgba(0,0,0,0.5);
+}
+
+.timer-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px 0;
+  display: inline-block;
+  z-index: 10;
+  position: relative;
+}
+
+.timer-button:hover {
+  background-color: #45a049;
+}
+
+.back-link {
+  display: block;
+  margin-top: 20px;
+  color: inherit;
+  text-decoration: underline;
+  text-shadow: 0 0 3px rgba(0,0,0,0.5);
+  z-index: 10;
+  position: relative;
+}
+
+#message-popup {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  max-width: 80%;
+  text-align: center;
+  font-size: 1.1rem;
+  pointer-events: none;
+  display: none;
+}
+
+/* Color themes - apply to button */
+.red-theme .timer-button { background-color: #e53935; }
+.red-theme .timer-button:hover { background-color: #c62828; }
+
+.blue-theme .timer-button { background-color: #1976D2; }
+.blue-theme .timer-button:hover { background-color: #0D47A1; }
+
+.green-theme .timer-button { background-color: #43A047; }
+.green-theme .timer-button:hover { background-color: #2E7D32; }
+
+.yellow-theme .timer-button { background-color: #FDD835; color: #333; }
+.yellow-theme .timer-button:hover { background-color: #F9A825; }
+
+.orange-theme .timer-button { background-color: #FB8C00; }
+.orange-theme .timer-button:hover { background-color: #EF6C00; }
+
+.purple-theme .timer-button { background-color: #8E24AA; }
+.purple-theme .timer-button:hover { background-color: #6A1B9A; }
+
+h1 {
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+</style>

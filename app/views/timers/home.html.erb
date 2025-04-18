@@ -1,47 +1,72 @@
-<h1>Pomodoro Timer</h1>
-<p> Find me in app/views/timers/home.html.erb </p>
+<div class="home-container">
+  <h1>Pomodoro Timer</h1>
+  <h3>Our purpose is to provide you with the structure and support to motivate your success!!</h3>
+  <p>Welcome to the best study app in history. You will no longer have to struggle academically, emotionally, and mentally with the help of Pomodoro, an application providing catered, guided, focus sessions for any occasion. </p>
+  <div class="menu-options">
+    <div class="option-card">
+      <h2>Quick Start</h2>
+      <p>Begin with default settings</p>
+      <%= link_to "Start Timer", timers_start_path(session_time: 25, break_time: 5, color: "red"), class: "button" %>
+    </div>
 
-<div class = "theme-settings"
-    <h2> Choose Your Theme! </h2>
+    <div class="option-card">
+      <h2>Customize Settings</h2>
+      <p>Personalize your timer experience</p>
+      <%= link_to "Settings", timers_settings_path, class: "button settings-button" %>
+    </div>
+  </div>
 
-    <form action = "/timers/start" method = "get">
-        <div class = "color-selector">
-            <h3> Pick a color </h3>
-            <input type="radio" id="color_red" name="color" value="red" checked>
-            <label for="color_red" class="color-label red">Red</label>
-
-            <input type="radio" id="color_blue" name="color" value="blue" >
-            <label for="color_blue" class="color-label blue">Blue</label>
-
-            <input type="radio" id="color_green" name="color" value="green" >
-            <label for="color_green" class="color-label green">Green</label>
-
-            <input type="radio" id="color_yellow" name="color" value="yellow" >
-            <label for="color_yellow" class="color-label yellow">Yellow</label>
-
-            <input type="radio" id="color_orange" name="color" value="orange" >
-            <label for="color_orange" class="color-label orange">Orange</label>
-
-            <input type="radio" id="color_purple" name="color" value="purple" >
-            <label for="color_purple" class="color-label purple">Purple</label>
-        </div>
-
-        <div class = "timer-settings">
-
-            <h3> Timer Settings </h3>
-            <div class = "setting">
-                <label for "session_time">Session Time:</label>
-                <input type = "number" id = "session_time" name = "session_time" value = 25 min = 1 max = 60>
-            </div>
-
-            <div class = "setting">
-                <label for "break_time">Break Time:</label>
-                <input type = "number" id = "break_time" name = "break_time" value = 5 min = 1 max = 12>
-            </div>
-        </div>
-
-        <button type="submit" class="start-button">Start Timer</button>
-
-        <h3> You Deserve To Be Heard And Understood. The NJ Hopeline Offers Sound Advice And A Safe Place To Connect.</h3>
-        <%= link_to "NJ Hopeline", "https://www.thehopeline.com/", class: "button", target: "_blank" %>    </form>
+  <div class="resources">
+    <h3>You Deserve To Be Heard And Understood. The NJ Hopeline Offers Sound Advice And A Safe Place To Connect <3 </h3>
+    <%= link_to "NJ Hopeline", "https://www.thehopeline.com/", class: "button resource-button", target: "_blank" %>
+  </div>
 </div>
+
+<style>
+  .home-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .menu-options {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 40px 0;
+  }
+
+  .option-card {
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-top: 15px;
+  }
+
+  .settings-button {
+    background-color: #2196F3;
+  }
+
+  .resource-button {
+    background-color: #9C27B0;
+  }
+
+  .resources {
+    margin-top: 40px;
+    padding: 20px;
+    background-color: #f1f1f1;
+    border-radius: 8px;
+  }
+</style>
