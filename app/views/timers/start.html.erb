@@ -16,7 +16,7 @@
 
   <%# If theme is space, assign space audio as background %>
   <% if @theme.downcase.include?("space") %>
-    <!-- Space theme audio -->
+    //Set space ambient as background
     <audio id="ambience-sound" loop preload="auto">
       <source src="<%= asset_path('space-ambient.wav') %>" type="audio/wav">
     </audio>
@@ -28,7 +28,7 @@
     </audio>
   <% end %>
   
-  <!-- Notification sounds -->
+  //Session progress sounds
   <audio id="session-end-sound" preload="auto">
     <source src="<%= asset_path('session-end.mp3') %>" type="audio/mpeg">
   </audio>
@@ -57,7 +57,7 @@ window.audioPaths = {
   "calm-5.wav": "<%= asset_path('calm-5.wav') %>"
 };
 
-// Make variables global for persistence across page loads
+// Make variables global for consistency
 window.sessionTime = <%= params[:session_time] || 25 %>;
 window.breakTime = <%= params[:break_time] || 5 %>;
 window.minutes = window.sessionTime;
@@ -66,7 +66,7 @@ window.isRunning = false;
 window.inSession = true;
 window.timer = null;
 
-// Initialize on page load
+// Initialize attr with page load
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM Content Loaded. Timer initialized with session time:', window.sessionTime, 'break time:', window.breakTime);
   
@@ -84,12 +84,12 @@ document.addEventListener('DOMContentLoaded', function() {
   updateDisplay();
 });
 
-// Format numbers with leading zeros (global function)
+// Format numbers with leading zeros
 window.zeroPadding = function(num) {
   return (num < 10) ? '0' + num : num;
 };
 
-// Update timer display (global function)
+// Update timer display
 window.updateDisplay = function() {
   var minutesElement = document.getElementById('minutes');
   var secondsElement = document.getElementById('seconds');
@@ -145,7 +145,7 @@ window.playAmbience = function() {
     ambienceSound.currentTime = 0;
     ambienceSound.volume = 1.0;
     
-    // Play with error handling
+    // Play ambience + error handles
     try {
       var playPromise = ambienceSound.play();
       
@@ -195,7 +195,7 @@ window.feelingMessages = {
   ]
 };
 
-// Fixed playMessageAudio function
+//playMessageAudio function
 window.playMessageAudio = function(audioFileName) {
   // Get the precompiled path from our paths object
   var audioPath = window.audioPaths[audioFileName];
@@ -225,7 +225,7 @@ window.playMessageAudio = function(audioFileName) {
   }
 };
 
-// Start timer countdown (global function)
+// Start timer countdown
 window.startTimer = function() {
 
   window.showFeelingMessages = function() {
@@ -238,20 +238,20 @@ window.startTimer = function() {
   // Get timer element as parent for messages
   var timerContainer = document.querySelector('.timer-content');
   
-  // Create popup element if it doesn't exist
+  // Create popup element
   var popup = document.createElement('div');
   popup.id = 'message-popup';
   popup.style.display = 'none';
   timerContainer.appendChild(popup);
   
-  // Shuffle the messages to randomize them
+  // Shuffle the messages to randomize
   var shuffledMessages = [...messages].sort(() => 0.5 - Math.random());
   
-  // Calculate time between messages (in seconds)
+  // Calculate time between messages
   var sessionLengthSeconds = window.sessionTime * 60;
   var intervalSeconds = Math.floor(sessionLengthSeconds / 5);
   
-  // Display messages at intervals
+  // Display messages in intervals
   shuffledMessages.forEach(function(message, index) {
     setTimeout(function() {
       // Only show message if still in session mode
@@ -260,10 +260,10 @@ window.startTimer = function() {
         popup.textContent = message.text;
         popup.style.display = 'block';
         
-        // Play the matching audio file
+        // Play matching audio
         window.playMessageAudio(message.audio);
         
-        // Hide after 3 seconds
+        // Wait 3 seconds
         setTimeout(function() {
           popup.style.display = 'none';
         }, 3000);
@@ -447,21 +447,6 @@ html, body {
 /* Color themes - apply to button */
 .red-theme .timer-button { background-color: #e53935; }
 .red-theme .timer-button:hover { background-color: #c62828; }
-
-.blue-theme .timer-button { background-color: #1976D2; }
-.blue-theme .timer-button:hover { background-color: #0D47A1; }
-
-.green-theme .timer-button { background-color: #43A047; }
-.green-theme .timer-button:hover { background-color: #2E7D32; }
-
-.yellow-theme .timer-button { background-color: #FDD835; color: #333; }
-.yellow-theme .timer-button:hover { background-color: #F9A825; }
-
-.orange-theme .timer-button { background-color: #FB8C00; }
-.orange-theme .timer-button:hover { background-color: #EF6C00; }
-
-.purple-theme .timer-button { background-color: #8E24AA; }
-.purple-theme .timer-button:hover { background-color: #6A1B9A; }
 
 h1 {
   text-shadow: 0 0 5px rgba(0,0,0,0.5);

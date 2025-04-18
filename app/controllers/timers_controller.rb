@@ -7,16 +7,13 @@ class TimersController < ApplicationController
     @color = params[:color] || "red"
     @feeling = params[:feeling] || "focused"
     @theme = params[:theme] || "Light"
-    @message_frequency = params[:message_frequency] || 1
   end
 
   def start
     @session_time = (params[:session_time] || 25).to_i
     @break_time = (params[:break_time] || 5).to_i
-    @color = (params[:color] || "red")
     @feeling = (params[:feeling] || "focused")
     @theme = params[:theme] || "Light"
-    @message_frequency = (params[:message_frequency] || 1).to_i
 
     puts "Theme selected: #{@theme}"
     puts "Color selected: #{@color}"
