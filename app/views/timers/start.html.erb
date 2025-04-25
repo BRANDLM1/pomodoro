@@ -12,7 +12,7 @@
     </div>
 
     <button id="start-button" class="timer-button" onclick="startTimer()">Start Timer</button>
-    <a href="/timers/home" class="back-link">Back to Home</a>
+    <a href="/timers/settings" class="back-link">Back to Settings</a>
   </div>
 
   <%# If theme is space, assign space audio as background %>
@@ -58,18 +58,77 @@ window.audioPaths = {
   "calm-5.wav": "<%= asset_path('calm-5.wav') %>"
 };
 
+window.timer = null;
+
 // Make variables global for consistency
 window.sessionTime = <%= params[:session_time] || 25 %>;
 window.breakTime = <%= params[:break_time] || 5 %>;
 window.minutes = window.sessionTime;
 window.seconds = 0;
+
 window.isRunning = false;
 window.inSession = true;
-window.timer = null;
+
+window.resetPage = function() {
+    // Stop all audio elements on the page
+    document.querySelectorAll('audio').forEach(function(audio) {
+      if(audio){
+      audio.pause();
+      audio.currentTime = 0;
+      }
+    });
+    
+    // Stop any dynamically created audio elements
+    if (window.currentAudio) {
+      window.currentAudio.pause();
+      window.currentAudio = null;
+    }
+    
+    // Clear any running timers
+    if (window.timer) {
+      clearInterval(window.timer);
+      window.timer = null;
+    }
+
+    if (window.messageTimeouts && window.messageTimeouts.length) {
+    window.messageTimeouts.forEach(function(timeoutId) {
+      clearTimeout(timeoutId);
+    });
+    window.messageTimeouts = [];
+    }
+  
+    // Remove any existing popup
+    var existingPopup = document.getElementById('message-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+    
+    // Reset timer state
+    window.isRunning = false;
+    window.inSession = true;
+    window.minutes = window.sessionTime;
+    window.seconds = 0;
+    
+    // Update display
+    window.updateDisplay();
+    
+    // Show start button again
+    var startButton = document.getElementById('start-button');
+    if (startButton) startButton.style.display = 'block';
+  };
 
 // Initialize attr with page load
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM Content Loaded. Timer initialized with session time:', window.sessionTime, 'break time:', window.breakTime);
+  
+  
+  window.resetPage();
+
+  // Maintains consistency with timer synch
+  document.addEventListener('pageshow', function(e) {
+    window.resetPage();
+  });
+
   
   // Audio elements
   var ambienceSound = document.getElementById('ambience-sound');
@@ -82,7 +141,14 @@ document.addEventListener('DOMContentLoaded', function() {
   if (breakEndSound) breakEndSound.volume = 1.0;
   
   // Initialize timer display
-  updateDisplay();
+  window.updateDisplay();
+
+  var backLink = document.querySelector('.back-link');
+  if (backLink) {
+    backLink.addEventListener('click', function(e) {
+      window.resetPage();
+    });
+  }
 });
 
 // Format numbers with leading zeros
@@ -205,29 +271,42 @@ window.playMessageAudio = function(audioFileName) {
     console.error("Audio file not found:", audioFileName);
     return;
   }
+
+  if (window.currentAudio) {
+    window.currentAudio.pause();
+  }
   
   console.log("Playing audio file:", audioFileName, "with path:", audioPath);
   
   // Create audio element
-  var audio = new Audio(audioPath);
-  audio.volume = 0.7; // Set volume to 70%
-  
-  // Play the audio with error handling
-  try {
-    var playPromise = audio.play();
-    
-    if (playPromise !== undefined) {
-      playPromise.catch(function(error) {
-        console.error("Error playing message audio:", error);
-      });
-    }
-  } catch(e) {
-    console.error("Error creating audio element:", e);
-  }
+  window.currentAudio = new Audio(audioPath);
+  window.currentAudio.volume = 0.7;
+  //Play the audio with error handling
+  window.currentAudio.play().catch(function(error) {
+    console.error("Error playing audio:", error);
+  });
 };
 
 // Start timer countdown
 window.startTimer = function() {
+
+  //Clears existing timers
+  if (window.timer) {
+    clearInterval(window.timer);
+  }
+
+  console.log('Start timer function called');
+
+  var startButton = document.getElementById('start-button');
+  if (startButton) {
+    startButton.style.display = 'none';
+  }
+  var startButton = document.getElementById('start-button');
+  if (startButton) {
+    startButton.style.display = 'none';
+  }
+  window.isRunning = true;
+  
 
   window.showFeelingMessages = function() {
   // Get the selected feeling
@@ -254,9 +333,9 @@ window.startTimer = function() {
   
   // Display messages in intervals
   shuffledMessages.forEach(function(message, index) {
-    setTimeout(function() {
+    var timeoutId = setTimeout(function() {
       // Only show message if still in session mode
-      if (window.inSession) {
+      if (window.inSession && window.isRunning) {
         // Show message
         popup.textContent = message.text;
         popup.style.display = 'block';
@@ -273,14 +352,6 @@ window.startTimer = function() {
   });
 };
 
-
-  console.log('Start timer function called');
-  if (window.isRunning) return;
-  
-  window.isRunning = true;
-  var startButton = document.getElementById('start-button');
-  if (startButton) startButton.style.display = 'none'; // Hide the start button
-  
   // Start theme-specific ambience
   window.playAmbience();
   // Start motivational messages
