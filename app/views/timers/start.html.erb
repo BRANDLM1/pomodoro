@@ -12,8 +12,10 @@
     </div>
 
     <button id="start-button" class="timer-button" onclick="startTimer()">Start Timer</button>
-    <a href="/timers/settings" class="back-link">Back to Settings</a>
-  </div>
+    <button id="back-to-settings" href="#" class="back-link">Back to Settings</button>
+
+    </div>
+
 
   <%# If theme is space, assign space audio as background %>
   <% if @theme.downcase.include?("space") %>
@@ -39,6 +41,8 @@
 </div>
 
 <%= javascript_tag do %>
+
+  
 // Precompile audio paths
 window.audioPaths = {
   "focused-1.wav": "<%= asset_path('focused-1.wav') %>",
@@ -121,14 +125,12 @@ window.resetPage = function() {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM Content Loaded. Timer initialized with session time:', window.sessionTime, 'break time:', window.breakTime);
   
-  
   window.resetPage();
 
   // Maintains consistency with timer synch
   document.addEventListener('pageshow', function(e) {
     window.resetPage();
   });
-
   
   // Audio elements
   var ambienceSound = document.getElementById('ambience-sound');
@@ -142,12 +144,18 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initialize timer display
   window.updateDisplay();
+});
 
-  var backLink = document.querySelector('.back-link');
-  if (backLink) {
-    backLink.addEventListener('click', function(e) {
-      window.resetPage();
-    });
+// BackLink for timer reset before navigating back to settings
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'back-to-settings') {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Back link clicked — resetting timer/audio");
+    window.resetPage();
+    setTimeout(function () {
+      window.location.href = "/timers/settings";
+    }, 200);
   }
 });
 
@@ -301,10 +309,7 @@ window.startTimer = function() {
   if (startButton) {
     startButton.style.display = 'none';
   }
-  var startButton = document.getElementById('start-button');
-  if (startButton) {
-    startButton.style.display = 'none';
-  }
+
   window.isRunning = true;
   
 
@@ -456,7 +461,31 @@ html, body {
   background-size: cover;
   background-position: center;
 }
+#back-to-settings {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: white;
+  background-color: #444;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
 
+#back-to-settings:hover {
+  background-color: #222;
+  transform: scale(1.02);
+}
+
+#back-to-settings:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
 #timer {
   font-size: 3rem;
   margin: 20px 0;
