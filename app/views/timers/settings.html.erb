@@ -8,12 +8,12 @@
         <div class="setting">
 
           <%= label_tag :session_time, "Session Time (minutes):" %>
-          <%= number_field_tag :session_time, params[:session_time] || 25, min: 1, max: 60 %>
+          <%= number_field_tag :session_time, params[:session_time] || 25, min: 5, max: 60 %>
         </div>
         
         <div class="setting">
           <%= label_tag :break_time, "Break Time (minutes):" %>
-          <%= number_field_tag :break_time, params[:break_time] || 5, min: 1, max: 30 %>
+          <%= number_field_tag :break_time, params[:break_time] || 5, min: 1, max: 12 %>
         </div>
        
       </div>
@@ -47,7 +47,7 @@
     </div>
     
     <div class="button-group">
-      <%= submit_tag "Start Timer", class: "start-button" %>
+      <%= submit_tag "Join Room", class: "start-button" %>
       <%= link_to "Back to Home", timers_home_path, class: "back-button" %>
     </div>
   <% end %>
